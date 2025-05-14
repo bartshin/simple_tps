@@ -17,9 +17,8 @@ public class InputSettings : SingletonBehaviour<InputSettings>
   }
 
   public ControlMode Control = ControlMode.KeyboardWithMouse;
-  public float MaxVerticalPOV = 40f;
   public float MinVerticalPOV = -40f;
-
-  public float MouseSpeedForPOV = 5f;
+  public float MaxVerticalPOV = 40f;
+  public float MouseSpeedForPOV = 100f;
 
 }

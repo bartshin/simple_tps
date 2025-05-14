@@ -6,68 +6,131 @@ using Architecture;
 public class PlayerMovement 
 {
 
-  Rigidbody rb;
-  Transform avatar;
-  Transform aim;
-  PlayerStat stat;
-  ObservableValue<bool> isAiming;
+  public Rigidbody rb { get; private set;  }
+  public Transform avatar { get; private set; }
+  public Transform aim { get; private set; }
+
+  float rotationLerpThreshold = 5f;
+  float rotationLerpSpeed = 10f;
 
   public PlayerMovement(
       Rigidbody rigidbody,
       Transform avatar,
-      Transform aim,
-      ObservableValue<bool> isAiming, 
-      PlayerStat stat
+      Transform aim
       )
   {
     this.rb = rigidbody;
     this.avatar = avatar;
     this.aim = aim;
-    this.isAiming = isAiming;
-    this.stat = stat;
   }
 
-  public void Update()
+  public void AvatarLookDirection(Vector3 dir)
   {
-    var input = this.GetInput();
-    
-    this.Rotate(input.movingInput, input.aimingInput);
-    this.Move(input.movingInput);
+    this.avatar.rotation = Quaternion.LookRotation(dir);
   }
 
-  void Rotate(Vector2 movingInput, Vector2 aimingInput)
+  public void AvatarLookDirectionLerp(Vector3 dir)
   {
-    if (this.isAiming.Value) {
-
+    var currentDir = this.avatar.forward;
+    if (Vector3.Distance(dir, currentDir) > this.rotationLerpThreshold)  {
+      this.avatar.rotation = Quaternion.Lerp(
+          this.avatar.rotation,
+          Quaternion.LookRotation(dir),
+          this.rotationLerpSpeed * Time.deltaTime
+          );
     }
     else {
-      Debug.Log(aimingInput.y);
-      var lookRotation = this.aim.eulerAngles;
-      //lookRotation.x = lookRotation.x + aimingInput.y * InputSettings.Shared.MouseSpeedForPOV;
-      lookRotation.x = Mathf.Clamp(
-          lookRotation.x + aimingInput.y * InputSettings.Shared.MouseSpeedForPOV,
+      this.avatar.forward = dir;
+    }
+  }
+
+  public Vector2 CalcAimRotationAngles(Vector2 input)
+  {
+    Vector2 angles;
+    switch (InputSettings.Shared.Control)
+    {
+      case InputSettings.ControlMode.KeyboardWithMouse:
+        angles = new Vector2(
+          input.x * InputSettings.Shared.MouseSpeedForPOV * Time.deltaTime,
+          input.y * InputSettings.Shared.MouseSpeedForPOV * Time.deltaTime
+        );
+        break;
+      default: throw (new NotImplementedException());
+    }
+    return (angles);
+  }
+
+  public void RotateAim(Vector2 angles)
+  {
+    if (angles.x != 0) {
+      this.aim.RotateAround(
+          this.avatar.position,
+          this.avatar.up,
+          angles.x
+          );
+    }
+    if (angles.y != 0) {
+      var rotationAngles = this.aim.rotation.eulerAngles;
+      rotationAngles.x += -angles.y;
+      if (rotationAngles.x > 180) {
+        rotationAngles.x -= 360;
+      }
+      rotationAngles.x = Mathf.Clamp(
+          rotationAngles.x,
           InputSettings.Shared.MinVerticalPOV,
           InputSettings.Shared.MaxVerticalPOV
           );
-      lookRotation.y = 
-          lookRotation.y + aimingInput.x * InputSettings.Shared.MouseSpeedForPOV;
-      this.aim.rotation = Quaternion.Euler(lookRotation);
+      this.aim.rotation = Quaternion.Euler(
+          rotationAngles.x,
+          rotationAngles.y,
+          rotationAngles.z
+          );
     }
   }
 
-  void Move(Vector2 movingInput)
+  public Vector2 CalcAvatarRotateAngle(Vector2 input, float rotateSpeed)
   {
-    var currentForward = this.avatar.forward;
-    this.rb.velocity += 
-      (currentForward * movingInput.y) 
-      * Time.deltaTime * this.stat.MoveAcceleration;
+    return (new Vector2(0, input.x * rotateSpeed));
+  }
+
+  public void RotateAvatar(Vector2 angles)
+  {
+    var avatarAngles = this.avatar.rotation.eulerAngles;
+    avatarAngles.x += angles.x;
+    avatarAngles.y += angles.y;
+    var currentRotation = this.avatar.rotation;
+    if (Vector3.Distance(
+          currentRotation.eulerAngles,
+          avatarAngles
+          ) > this.rotationLerpThreshold) {
+      this.avatar.transform.rotation = Quaternion.Lerp(
+          currentRotation,
+          Quaternion.Euler(avatarAngles),
+          this.rotationLerpSpeed * Time.deltaTime 
+          );
+    }
+    else {
+      this.avatar.transform.rotation = Quaternion.Euler(avatarAngles);
+    }
+  }
+
+  public Vector3 CalcMovingDirection(Vector2 input)
+  {
+    var dir = (this.aim.forward * input.y) + (this.aim.right * input.x);
+    dir.y = 0;
+    return (dir.normalized);
+  }
+
+  public void AddVelocity(Vector3 direction, float acceleration, float maxSpeed)
+  {
+    this.rb.velocity += direction * Time.deltaTime * acceleration;
     var speed = this.rb.velocity.magnitude;
-    if (this.rb.velocity.magnitude > this.stat.MaxSpeed) {
-      this.rb.velocity *= speed / this.stat.MaxSpeed;
+    if (this.rb.velocity.magnitude > maxSpeed) {
+      this.rb.velocity *= speed / maxSpeed;
     } 
   }
 
-  (Vector2 movingInput, Vector2 aimingInput) GetInput()
+  public (Vector2 movingInput, Vector2 aimingInput) GetInput()
   {
     switch (InputSettings.Shared.Control)
     {
