@@ -9,6 +9,7 @@ public class PlayerMovement
   public Rigidbody rb { get; private set;  }
   public Transform avatar { get; private set; }
   public Transform aim { get; private set; }
+  public Vector3 Velocity => this.rb.velocity;
 
   float rotationLerpThreshold = 5f;
   float rotationLerpSpeed = 10f;

@@ -89,6 +89,10 @@ public class PlayerController : MonoBehaviour
       this.movement.RotateAim(aimRotationAngles);
     }
     var movingDirection = this.movement.CalcMovingDirection(input.movingInput);
+    this.movement.AddVelocity(
+        direction: movingDirection,
+        acceleration: this.stat.Acceleration,
+        maxSpeed: this.stat.MaxSpeed);
     if (this.IsAiming.Value) {
       this.movement.AvatarLookDirection(new Vector3(
             this.aim.transform.localPosition.x,
@@ -96,14 +100,11 @@ public class PlayerController : MonoBehaviour
             this.aim.transform.localPosition.z
             ));   
     }
-    this.movement.AddVelocity(
-        direction: movingDirection,
-        acceleration: this.stat.Acceleration,
-        maxSpeed: this.stat.MaxSpeed);
-    if (input.movingInput != Vector2.zero) {
-      this.movement.AvatarLookDirection(new Vector3(
-            input.movingInput.x,
-            0, input.movingInput.y
+    else if (input.movingInput != Vector2.zero) {
+      this.movement.AvatarLookDirectionLerp(new Vector3(
+            this.movement.Velocity.x,
+            0, 
+            this.movement.Velocity.z
             ));
     }
   }
