@@ -7,22 +7,56 @@ public class PlayerMovement
 {
 
   public Rigidbody rb { get; private set;  }
+  public Animator animator { get; private set;  }
   public Transform avatar { get; private set; }
   public Transform aim { get; private set; }
+  public ObservableValue<bool> IsMoving { get; private set; } = new (false);
   public Vector3 Velocity => this.rb.velocity;
 
   float rotationLerpThreshold = 5f;
   float rotationLerpSpeed = 10f;
+  float slowdownLerpThreshold = 1f;
+  float slowdownLerpSpeed = 2.5f;
+  float movingThreshold = 0.1f;
+  float aimDist;
+  (float min, float max) aimSinValues;
+  (float min, float max) aimCosValues;
 
   public PlayerMovement(
       Rigidbody rigidbody,
+      Animator animator,
       Transform avatar,
       Transform aim
       )
   {
     this.rb = rigidbody;
+    this.animator = animator;
     this.avatar = avatar;
     this.aim = aim;
+    this.aimDist = aim.transform.position.z;
+    this.aimSinValues = (
+        MathF.Sin(InputSettings.Shared.MinVerticalPOV),  
+        MathF.Sin(
+        InputSettings.Shared.MaxVerticalPOV
+        ));
+    this.aimCosValues = (
+        MathF.Cos(InputSettings.Shared.MinVerticalPOV),
+        MathF.Cos(InputSettings.Shared.MaxVerticalPOV)
+        );
+  }
+
+  public void OnUpdate()
+  {
+    var isMoving = this.rb.velocity.magnitude > this.movingThreshold;
+    if (this.IsMoving.Value != isMoving) {
+      this.animator.SetBool("IsMoving", isMoving);
+    }
+    this.IsMoving.Value = isMoving;
+    this.animator.SetFloat("VelocityX",
+        Math.Abs(Vector3.Dot(this.avatar.right, this.rb.velocity))
+        );
+    this.animator.SetFloat("VelocityZ",
+        Math.Abs(Vector3.Dot(this.avatar.forward, this.rb.velocity)));
   }
 
   public void AvatarLookDirection(Vector3 dir)
@@ -43,6 +77,16 @@ public class PlayerMovement
     else {
       this.avatar.forward = dir;
     }
+  }
+
+  public bool IsOppositeDirection(Vector3 dirToMove)
+  {
+    if (this.rb.velocity.magnitude < this.movingThreshold) {
+      return (false);
+    }
+    return (
+        this.rb.velocity.x * dirToMove.x < 0 ||
+            this.rb.velocity.z * dirToMove.z < 0);
   }
 
   public Vector2 CalcAimRotationAngles(Vector2 input)
@@ -70,21 +114,25 @@ public class PlayerMovement
           angles.x
           );
     }
-    if (angles.y != 0) {
-      var rotationAngles = this.aim.rotation.eulerAngles;
-      rotationAngles.x += -angles.y;
-      if (rotationAngles.x > 180) {
-        rotationAngles.x -= 360;
-      }
-      rotationAngles.x = Mathf.Clamp(
-          rotationAngles.x,
-          InputSettings.Shared.MinVerticalPOV,
-          InputSettings.Shared.MaxVerticalPOV
+    this.aim.RotateAround(
+        this.avatar.position,
+        this.avatar.right,
+        -angles.y 
+        );
+    if (this.aim.transform.position.y / this.aimDist <
+        this.aimSinValues.min) {
+      this.aim.transform.position = new Vector3(
+          this.aim.transform.position.x,
+          this.aimDist * this.aimSinValues.min,
+          this.aimDist * this.aimCosValues.min
           );
-      this.aim.rotation = Quaternion.Euler(
-          rotationAngles.x,
-          rotationAngles.y,
-          rotationAngles.z
+    }
+    else if (this.aim.transform.position.y / this.aimDist 
+        > this.aimSinValues.max) {
+      this.aim.transform.position = new Vector3(
+          this.aim.transform.position.x,
+          this.aimDist * this.aimSinValues.max,
+          this.aimDist * this.aimCosValues.max
           );
     }
   }
@@ -117,9 +165,14 @@ public class PlayerMovement
 
   public Vector3 CalcMovingDirection(Vector2 input)
   {
-    var dir = (this.aim.forward * input.y) + (this.aim.right * input.x);
-    dir.y = 0;
-    return (dir.normalized);
+    var aimDir = new Vector3(
+        this.aim.localPosition.x, 
+        0, 
+        this.aim.localPosition.z
+        );
+    var aimRight = Quaternion.Euler(0, 90, 0) * aimDir;
+    var movingDir = aimDir * input.y + aimRight * input.x; 
+    return (movingDir.normalized);
   }
 
   public void AddVelocity(Vector3 direction, float acceleration, float maxSpeed)
@@ -127,8 +180,17 @@ public class PlayerMovement
     this.rb.velocity += direction * Time.deltaTime * acceleration;
     var speed = this.rb.velocity.magnitude;
     if (this.rb.velocity.magnitude > maxSpeed) {
-      this.rb.velocity *= speed / maxSpeed;
+      this.rb.velocity *= maxSpeed / speed;
     } 
+  }
+
+  public void Move(Vector3 direction, float speed) 
+  {
+    this.rb.velocity = new Vector3(
+        direction.x * speed,
+        this.rb.velocity.y,
+        direction.z * speed
+        );
   }
 
   public (Vector2 movingInput, Vector2 aimingInput) GetInput()
@@ -138,6 +200,25 @@ public class PlayerMovement
       case InputSettings.ControlMode.KeyboardWithMouse:
         return (this.GetKeyboardMovingInput(), this.GetMouseAimInput()); 
         default: throw (new NotImplementedException());
+    }
+  }
+
+  public void Stop()
+  {
+    this.rb.velocity = new Vector3(0, this.rb.velocity.y, 0);
+  }
+
+  public void Slowdown()
+  {
+    if (this.rb.velocity.magnitude > this.slowdownLerpThreshold) {
+      this.rb.velocity = Vector3.Lerp(
+          this.rb.velocity,
+          Vector3.zero,
+          this.slowdownLerpSpeed * Time.deltaTime
+          );
+    }
+    else {
+      this.rb.velocity = Vector3.zero;
     }
   }
 

@@ -11,16 +11,26 @@ public class PlayerController : MonoBehaviour
   {
     public float Acceleration { get; set; }
     public float MaxSpeed { get; set; }
+    public float MovingSpeedWhenAiming { get; set; }
     public float RotationSpeed { get; set; } 
   }
 
   public Vector3 Position => this.Avatar.transform.position;
   public Quaternion AimDirection => this.Aim.rotation;
+  public ObservableValue<bool> IsAiming => this.attack.IsAiming;
+  public ObservableValue<bool> IsMovinig => this.movement.IsMoving;
 
   PlayerMovement movement;
+  PlayerAttack attack;
   public Transform Aim => this.aim;
   [SerializeField]
   Transform aim;
+  [SerializeField]
+  Animator animator;
+  [SerializeField]
+  CinemachineImpulseSource impulseSource;
+  [SerializeField]
+  Rigidbody rb;
 
   public Transform Avatar => this.avatar;
   [SerializeField]
@@ -28,43 +38,46 @@ public class PlayerController : MonoBehaviour
 
   [SerializeField]
   PlayerStat stat = new PlayerStat { 
-    Acceleration = 5f, 
+    Acceleration = 10f, 
     MaxSpeed = 20f,
+    MovingSpeedWhenAiming = 2f,
     RotationSpeed = 30f
   };
 
-  public ObservableValue<bool> IsAiming { get; private set; } = new (false);
-
-
   void Awake()
   {
-    this.movement = this.CreateMovement();
-  }
-
-  // Start is called before the first frame update
-  void Start()
-  {
-
+    this.movement = this.CreateMovementController();
+    this.attack = this.CreateAttackController();
   }
 
   // Update is called once per frame
   void Update()
   {
-    this.UpdateAiming();
+    this.UpdateAttack();
     this.UpdateMovement();
   }
 
   void OnDestory()
   {
-    this.IsAiming.DestorySelf();
+    this.attack.IsAiming.DestorySelf();
+    this.movement.IsMoving.DestorySelf();
   }
 
-  void UpdateAiming()
+  void UpdateAttack()
   {
-    this.IsAiming.Value = Input.GetKey(KeyCode.Mouse1);
+    this.attack.Update();
   }
 
-  PlayerMovement CreateMovement()
+  PlayerAttack CreateAttackController()
+  {
+    PlayerAttack attack = new PlayerAttack(
+          animator: this.animator,
+          impulseSource: this.impulseSource);
+    attack.IsAiming.OnChanged += this.OnAimingChanged;
+    return (attack);
+  }
+
+  PlayerMovement CreateMovementController()
   {
     if (this.Aim == null) { 
       this.aim = this.transform.Find("Aim");
@@ -72,13 +85,20 @@ public class PlayerController : MonoBehaviour
     if (this.Avatar == null) {
       this.avatar = this.transform.Find("Avatar");
     }
-    var rigidbody = this.GetComponent<Rigidbody>();
 
     return (new PlayerMovement(
-          rigidbody: rigidbody,
+          rigidbody: this.rb,
+          animator: this.animator,
           avatar: this.Avatar,
           aim: this.Aim
           ));
+  }
+
+  void OnAimingChanged(bool isAiming) 
+  {
+    if (isAiming) {
+      this.movement.Stop();
+    }
   }
 
   void UpdateMovement()
@@ -88,20 +108,37 @@ public class PlayerController : MonoBehaviour
       var aimRotationAngles = this.movement.CalcAimRotationAngles(input.aimingInput);
       this.movement.RotateAim(aimRotationAngles);
     }
-    var movingDirection = this.movement.CalcMovingDirection(input.movingInput);
-    this.movement.AddVelocity(
-        direction: movingDirection,
-        acceleration: this.stat.Acceleration,
-        maxSpeed: this.stat.MaxSpeed);
-    if (this.IsAiming.Value) {
+    if (input.movingInput != Vector2.zero) {
+      var movingDirection = this.movement.CalcMovingDirection(input.movingInput);
+      if (!this.attack.IsAiming.Value) {
+        if (this.movement.IsOppositeDirection(movingDirection)) {
+          this.movement.Slowdown();
+        }
+        this.movement.AddVelocity(
+            direction: movingDirection,
+            acceleration: this.stat.Acceleration,
+            maxSpeed: this.stat.MaxSpeed);
+      }
+      else {
+        this.movement.Move(
+            direction: movingDirection,
+            speed: this.stat.MovingSpeedWhenAiming
+            );
+      }
+    }
+    else {
+      this.movement.Slowdown();
+    }
+    if (this.attack.IsAiming.Value) {
       this.movement.AvatarLookDirection(new Vector3(
             this.aim.transform.localPosition.x,
             0,
             this.aim.transform.localPosition.z
             ));   
     }
-    else if (input.movingInput != Vector2.zero) {
-      this.movement.AvatarLookDirectionLerp(new Vector3(
+    this.movement.OnUpdate();
+    if (this.movement.IsMoving.Value && !this.attack.IsAiming.Value) {
+      this.movement.AvatarLookDirection(new Vector3(
             this.movement.Velocity.x,
             0, 
             this.movement.Velocity.z

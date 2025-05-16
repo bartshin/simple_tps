@@ -11,10 +11,10 @@ namespace Architecture
 
     public static T Shared => SingletonBehaviour<T>.instance;
   
-    public void Destroy()
+    public static void Destroy()
     {
       if (SingletonBehaviour<T>.instance != null) {
-        UnityEngine.Object.Destroy(SingletonBehaviour<T>.Shared.gameObject);
+        Destroy(SingletonBehaviour<T>.Shared.gameObject);
         SingletonBehaviour<T>.instance = null;
       }
     }
@@ -30,6 +30,16 @@ namespace Architecture
       var gameObject = new GameObject(typeof(T).Name);
       DontDestroyOnLoad(gameObject);
       return (gameObject.AddComponent<T>());
+    }
+
+    protected void OnAwake()
+    {
+      if (SingletonBehaviour<T>.instance == null) {
+        SingletonBehaviour<T>.instance = this as T;
+      }
+      else if (SingletonBehaviour<T>.instance != this) {
+        Destroy(this.gameObject);
+      }
     }
   }
 }
