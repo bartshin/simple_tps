@@ -107,34 +107,22 @@ public class PlayerMovement
 
   public void RotateAim(Vector2 angles)
   {
+    var currentRotation = this.aim.rotation.eulerAngles;
     if (angles.x != 0) {
-      this.aim.RotateAround(
-          this.avatar.position,
-          this.avatar.up,
-          angles.x
-          );
+      currentRotation.y += angles.x;
     }
-    this.aim.RotateAround(
-        this.avatar.position,
-        this.avatar.right,
-        -angles.y 
+    if (angles.y != 0) {
+      currentRotation.x -= angles.y;
+      if (currentRotation.x > 180) {
+        currentRotation.x -= 360;
+      }
+      currentRotation.x = Math.Clamp(
+        currentRotation.x,
+        InputSettings.Shared.MinVerticalPOV,
+        InputSettings.Shared.MaxVerticalPOV
         );
-    if (this.aim.transform.position.y / this.aimDist <
-        this.aimSinValues.min) {
-      this.aim.transform.position = new Vector3(
-          this.aim.transform.position.x,
-          this.aimDist * this.aimSinValues.min,
-          this.aimDist * this.aimCosValues.min
-          );
     }
-    else if (this.aim.transform.position.y / this.aimDist 
-        > this.aimSinValues.max) {
-      this.aim.transform.position = new Vector3(
-          this.aim.transform.position.x,
-          this.aimDist * this.aimSinValues.max,
-          this.aimDist * this.aimCosValues.max
-          );
-    }
+    this.aim.rotation = Quaternion.Euler(currentRotation);
   }
 
   public Vector2 CalcAvatarRotateAngle(Vector2 input, float rotateSpeed)
@@ -165,13 +153,7 @@ public class PlayerMovement
 
   public Vector3 CalcMovingDirection(Vector2 input)
   {
-    var aimDir = new Vector3(
-        this.aim.localPosition.x, 
-        0, 
-        this.aim.localPosition.z
-        );
-    var aimRight = Quaternion.Euler(0, 90, 0) * aimDir;
-    var movingDir = aimDir * input.y + aimRight * input.x; 
+    var movingDir = this.aim.forward * input.y + this.aim.right * input.x;
     return (movingDir.normalized);
   }
 

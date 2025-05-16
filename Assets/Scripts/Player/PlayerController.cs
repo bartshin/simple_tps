@@ -22,9 +22,9 @@ public class PlayerController : MonoBehaviour
 
   PlayerMovement movement;
   PlayerAttack attack;
-  public Transform Aim => this.aim;
+  public Transform Aim => this.aimContainer;
   [SerializeField]
-  Transform aim;
+  Transform aimContainer;
   [SerializeField]
   Animator animator;
   [SerializeField]
@@ -79,8 +79,8 @@ public class PlayerController : MonoBehaviour
 
   PlayerMovement CreateMovementController()
   {
-    if (this.Aim == null) { 
-      this.aim = this.transform.Find("Aim");
+    if (this.aimContainer == null) { 
+      this.aimContainer = this.transform.Find("Aim Container");
     }
     if (this.Avatar == null) {
       this.avatar = this.transform.Find("Avatar");
@@ -131,9 +131,9 @@ public class PlayerController : MonoBehaviour
     }
     if (this.attack.IsAiming.Value) {
       this.movement.AvatarLookDirection(new Vector3(
-            this.aim.transform.localPosition.x,
+            this.aimContainer.forward.x,
             0,
-            this.aim.transform.localPosition.z
+            this.aimContainer.forward.z
             ));   
     }
     this.movement.OnUpdate();
