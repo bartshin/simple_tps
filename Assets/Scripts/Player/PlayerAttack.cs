@@ -19,6 +19,7 @@ public class PlayerAttack
   }
 
   public ObservableValue<bool> IsAiming { get; private set; } = new (false);
+  public Action OnShooting;
   [SerializeField] 
   KeyCode AimKey = KeyCode.Mouse1;
   [SerializeField]
@@ -47,6 +48,9 @@ public class PlayerAttack
     this.Gun.Update();
     if (input.HasPressShoot && !this.Gun.IsHot) {
       this.Gun.Fire();
+      if (this.OnShooting != null) {
+        this.OnShooting.Invoke();
+      }
     }
     var isAiming = input.IsHodingAim;
     if (this.IsAiming.Value != isAiming) {

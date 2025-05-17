@@ -19,6 +19,13 @@ public class PlayerController : MonoBehaviour
   public Quaternion AimDirection => this.Aim.rotation;
   public ObservableValue<bool> IsAiming => this.attack.IsAiming;
   public ObservableValue<bool> IsMovinig => this.movement.IsMoving;
+  public Action OnShooting 
+  {
+    get => this.attack.OnShooting;
+    set {
+      this.attack.OnShooting = value;
+    }
+  }
 
   PlayerMovement movement;
   PlayerAttack attack;

@@ -2,8 +2,8 @@ Shader "Unlit/Grow"
 {
   Properties
   {
-    _MainTexture("Main Texture", 2D) = "White" {}
     _AnimateValues("Animate Values", Vector) = (0, 0, 0, 0)
+    _Color("Color", Vector) = (1, 1, 1, 1)
   }
   SubShader
   {
@@ -38,22 +38,25 @@ Shader "Unlit/Grow"
 
         sampler2D _MainTexture;
         float4 _AnimateValues;
+        float4 _Color;
+        float lineWidth = 0.1f;
 
         v2f vert (appdata v)
         {
           v2f o;
           o.vertex = UnityObjectToClipPos(v.vertex);
           o.uv = v.uv;
-          o.uv = (o.uv - fixed2(0.5, 0.5)) * _AnimateValues.x + fixed2(0.5, 0.5);
-          o.uv -= fixed2(_AnimateValues.y, _AnimateValues.z);
+          //o.uv = (o.uv - fixed2(0.5, 0.5)) * _AnimateValues.x + fixed2(0.5, 0.5);
+          //o.uv -= fixed2(_AnimateValues.y, _AnimateValues.z);
           return o;
         }
 
         fixed4 frag (v2f i) : SV_Target
         {
-          fixed4 textureColor = tex2D(_MainTexture, i.uv);
-          textureColor.w *= _AnimateValues.w;
-          return textureColor;
+          float dist = distance(i.uv, fixed2(0.5, 0.5));
+          fixed4 color = _Color;
+          color.w = step(1.0 - abs(dist - _AnimateValues.x), 0.1);
+          return color;
         }
         ENDCG
       }

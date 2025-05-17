@@ -6,36 +6,40 @@ using Architecture;
 
 public class Crosshair : MonoBehaviour
 {
+  PlayerController player;
   Image icon;
   Material iconMaterial;
-  ObservableValue<bool> isAiming;
   const float FADE_ALPHA_STEP = 1.8f;
-  const float ZOOM_STEP = 0.5f;
-  const float MIN_ZOOM_VALUE = 0.8f;
+  const float ENLARGE_STEP = 0.5f;
+  const float MIN_SIZE_VALUE = 0.1f;
+  const float MAX_SIZE_VALUE = 0.2f;
   bool isFadeIn;
-  Color fullAlpha = new Color(1, 1, 1, 1);
-  Color transparentAlpha = new Color(1, 1, 1, 0);
+  bool isExpanding;
+  bool isShrinking;
+  Color defaultColor = new Color(0, 255f/256f, 156f/256f, 1f);
+  Color transparentAlpha = new Color(0, 255f/256f, 156f/256f, 0f);
 
   void Awake()
   {
+    this.player = GameObject.FindWithTag("Player").GetComponent<PlayerController>();
+    this.player.IsAiming.OnDestory += () => this.player = null;
     this.icon = this.GetComponentInChildren<Image>();
     this.iconMaterial = this.icon.material;
-    var player = GameObject.FindWithTag("Player").GetComponent<PlayerController>();
-    this.isAiming = player.IsAiming;
-    this.isAiming.OnDestory += () => this.isAiming = null;
+    this.iconMaterial.SetVector("_Color", this.defaultColor);
   }
 
   void OnEnable()
   {
-    if (this.isAiming != null) {
-      this.isAiming.OnChanged += this.OnChangedAiming;
+    if (this.player != null) {
+      this.player.IsAiming.OnChanged += this.OnChangedAiming;
+      this.player.OnShooting += this.OnShooting;
     }
   }
 
   void OnDisable()
   {
-    if (this.isAiming != null) {
-      this.isAiming.OnChanged -= this.OnChangedAiming;
+    if (this.player != null) {
+      this.player.IsAiming.OnChanged -= this.OnChangedAiming;
     }
   }
 
@@ -46,14 +50,21 @@ public class Crosshair : MonoBehaviour
   // Update is called once per frame
   void Update()
   {
+    var animateValues = this.iconMaterial.GetVector("_AnimateValues");
+    bool isUpdated = false;
     if (this.isFadeIn) {
-      var animateValues = this.iconMaterial.GetVector("_AnimateValues");
-      animateValues.x = Mathf.Min(animateValues.x + ZOOM_STEP * Time.deltaTime, 1f);
       animateValues.w += FADE_ALPHA_STEP * Time.deltaTime;
+      this.isFadeIn = animateValues.w < 1.0f;
+      isUpdated = true;
+    }
+    if (this.isShrinking) {
+      animateValues.x = Mathf.Max(
+          animateValues.x - ENLARGE_STEP * Time.deltaTime, MIN_SIZE_VALUE);
+      this.isShrinking = animateValues.x > MIN_SIZE_VALUE;
+      isUpdated = true;
+    }
+    if (isUpdated) {
       this.iconMaterial.SetVector("_AnimateValues", animateValues);
-      if (animateValues.w >= 1.0f) {
-        this.isFadeIn = false;
-      }
     }
   }
 
@@ -67,19 +78,44 @@ public class Crosshair : MonoBehaviour
     }
   }
 
+  void OnShooting()
+  {
+    this.iconMaterial.SetVector(
+        "_AnimateValues",
+        new (MAX_SIZE_VALUE, 0 , 0, 1)
+        );
+    this.isShrinking = true;
+    this.isExpanding = false;
+    this.isFadeIn = false;
+  }
+
   void Show()
   {
-    //this.icon.enabled = true;
     this.isFadeIn = true;
+    this.isShrinking = true;
+    this.isExpanding = false;
   }
 
   void Hide()
   {
     this.iconMaterial.SetVector(
         "_AnimateValues",
-        new (MIN_ZOOM_VALUE, 0, 0, 0)
+        new (MAX_SIZE_VALUE, 0, 0, 0)
         );
-    //this.icon.enabled = false;
     this.isFadeIn = false;
+    this.isExpanding = false;
+    this.isShrinking = false;
+  }
+
+  void Expand()
+  {
+    this.isShrinking = false;
+    this.isExpanding = true;
+  }
+
+  void Shrink()
+  {
+    this.isShrinking = true;
+    this.isExpanding = false;
   }
 }

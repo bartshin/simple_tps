@@ -45,7 +45,6 @@ GameObject:
   - component: {fileID: 5925287784135493351}
   - component: {fileID: 190333484360522377}
   - component: {fileID: 318779846822462308}
-  - component: {fileID: 2556257162805413185}
   m_Layer: 0
   m_Name: Player
   m_TagString: Player
@@ -82,7 +81,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 526abb15bb83af8a98cfab504635030c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  aim: {fileID: 8445808579055948570}
+  aimContainer: {fileID: 0}
   animator: {fileID: 4944300687596291022}
   impulseSource: {fileID: 1257280501055124921}
   rb: {fileID: 190333484360522377}
@@ -121,29 +120,6 @@ CapsuleCollider:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4103875576584401683}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 0
-  serializedVersion: 2
-  m_Radius: 0.5
-  m_Height: 2
-  m_Direction: 1
-  m_Center: {x: 0, y: 1, z: 0}
---- !u!65 &2556257162805413185
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4103875576584401683}
   m_Material: {fileID: 13400000, guid: d1a74d6859a822f6890d4b02c66dc6cd, type: 2}
   m_IncludeLayers:
     serializedVersion: 2
@@ -155,9 +131,11 @@ BoxCollider:
   m_IsTrigger: 0
   m_ProvidesContacts: 0
   m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 1, y: 1, z: 1}
-  m_Center: {x: 0, y: 0.5, z: 0}
+  serializedVersion: 2
+  m_Radius: 0.5
+  m_Height: 2
+  m_Direction: 1
+  m_Center: {x: 0, y: 1, z: 0}
 --- !u!1 &5242011336105627532
 GameObject:
   m_ObjectHideFlags: 0
