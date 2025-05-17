@@ -16,6 +16,7 @@ public class Crosshair : MonoBehaviour
   bool isFadeIn;
   bool isExpanding;
   bool isShrinking;
+  bool isWaving;
   Color defaultColor = new Color(0, 255f/256f, 156f/256f, 1f);
   Color transparentAlpha = new Color(0, 255f/256f, 156f/256f, 0f);
 
@@ -33,6 +34,7 @@ public class Crosshair : MonoBehaviour
     if (this.player != null) {
       this.player.IsAiming.OnChanged += this.OnChangedAiming;
       this.player.OnShooting += this.OnShooting;
+      this.player.IsMovinig.OnChanged += this.OnChangedMoving;
     }
   }
 
@@ -40,6 +42,8 @@ public class Crosshair : MonoBehaviour
   {
     if (this.player != null) {
       this.player.IsAiming.OnChanged -= this.OnChangedAiming;
+      this.player.OnShooting -= this.OnShooting;
+      this.player.IsMovinig.OnChanged -= this.OnChangedMoving;
     }
   }
 
@@ -80,13 +84,21 @@ public class Crosshair : MonoBehaviour
 
   void OnShooting()
   {
+    var currentValues = this.iconMaterial.GetVector("_AnimateValues");
+    currentValues.x = MAX_SIZE_VALUE;
+    currentValues.w = 1f;
     this.iconMaterial.SetVector(
         "_AnimateValues",
-        new (MAX_SIZE_VALUE, 0 , 0, 1)
-        );
+        currentValues);
     this.isShrinking = true;
     this.isExpanding = false;
     this.isFadeIn = false;
+  }
+
+  void OnChangedMoving(bool isMoving) {
+    var currentValues = this.iconMaterial.GetVector("_AnimateValues");
+    currentValues.y = isMoving ? 1: 0;
+    this.iconMaterial.SetVector("_AnimateValues", currentValues);
   }
 
   void Show()
@@ -98,9 +110,11 @@ public class Crosshair : MonoBehaviour
 
   void Hide()
   {
+    var currentValues = this.iconMaterial.GetVector("_AnimateValues");
+    currentValues.w = 0;
     this.iconMaterial.SetVector(
         "_AnimateValues",
-        new (MAX_SIZE_VALUE, 0, 0, 0)
+        currentValues
         );
     this.isFadeIn = false;
     this.isExpanding = false;

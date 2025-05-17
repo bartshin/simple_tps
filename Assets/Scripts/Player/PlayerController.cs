@@ -4,21 +4,22 @@ using UnityEngine;
 using Architecture;
 using Cinemachine;
 
-public class PlayerController : MonoBehaviour
+public class PlayerController : MonoBehaviour, IDamagable
 {
-  [Serializable]
   public struct PlayerStat
   {
-    public float Acceleration { get; set; }
-    public float MaxSpeed { get; set; }
-    public float MovingSpeedWhenAiming { get; set; }
-    public float RotationSpeed { get; set; } 
+    public float Acceleration;
+    public float MaxSpeed; 
+    public float MovingSpeedWhenAiming;
+    public float RotationSpeed;
+    public ObservableValue<(int current, int max)> Hp { get; set; }
   }
 
   public Vector3 Position => this.Avatar.transform.position;
   public Quaternion AimDirection => this.Aim.rotation;
   public ObservableValue<bool> IsAiming => this.attack.IsAiming;
   public ObservableValue<bool> IsMovinig => this.movement.IsMoving;
+  public ObservableValue<(int current, int max)> Hp => this.stat.Hp;
   public Action OnShooting 
   {
     get => this.attack.OnShooting;
@@ -44,17 +45,21 @@ public class PlayerController : MonoBehaviour
   Transform avatar;
 
   [SerializeField]
+  GauageImageUI HpBarUI;
+
   PlayerStat stat = new PlayerStat { 
     Acceleration = 10f, 
     MaxSpeed = 20f,
     MovingSpeedWhenAiming = 2f,
-    RotationSpeed = 30f
+    RotationSpeed = 30f,
+    Hp = new ObservableValue<(int, int)>((100, 100))
   };
 
   void Awake()
   {
     this.movement = this.CreateMovementController();
     this.attack = this.CreateAttackController();
+    this.HpBarUI.WatchingIntValue = this.stat.Hp;
   }
 
   // Update is called once per frame
@@ -63,6 +68,7 @@ public class PlayerController : MonoBehaviour
     this.UpdateAttack();
     this.UpdateMovement();
   }
+
 
   void OnDestory()
   {
@@ -151,5 +157,24 @@ public class PlayerController : MonoBehaviour
             this.movement.Velocity.z
             ));
     }
+  }
+
+  public int TakeDamage(int attackDamage)
+  {
+    if (attackDamage < 0) {
+      throw (new ArgumentException($"{nameof(attackDamage)} cannot be lesss than zero"));
+    }
+    var (currentHp, maxHp) = this.stat.Hp.Value;
+    var takenDamage = Math.Min(currentHp, attackDamage);
+    this.stat.Hp.Value = (currentHp - takenDamage, maxHp);
+    if (currentHp > 0 && this.stat.Hp.Value.current <= 0) {
+      this.Die();
+    }
+    return (takenDamage);
+  }
+
+  void Die()
+  {
+    Debug.Log("Player dead");
   }
 }
