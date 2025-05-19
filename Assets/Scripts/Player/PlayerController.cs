@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using Architecture;
 using Cinemachine;
 
@@ -30,6 +31,7 @@ public class PlayerController : MonoBehaviour, IDamagable
 
   PlayerMovement movement;
   PlayerAttack attack;
+  [SerializeField]
   public Transform Aim => this.aimContainer;
   [SerializeField]
   Transform aimContainer;
@@ -67,6 +69,9 @@ public class PlayerController : MonoBehaviour, IDamagable
   {
     this.UpdateAttack();
     this.UpdateMovement();
+    if (Input.GetKeyDown(KeyCode.Alpha1)) {
+      this.TakeDamage(10);
+    }
   }
 
 
@@ -84,8 +89,10 @@ public class PlayerController : MonoBehaviour, IDamagable
   PlayerAttack CreateAttackController()
   {
     PlayerAttack attack = new PlayerAttack(
-          animator: this.animator,
-          impulseSource: this.impulseSource);
+        attackOrigin: this.aimContainer.transform,
+        aim: this.Aim.transform,
+        animator: this.animator,
+        impulseSource: this.impulseSource);
     attack.IsAiming.OnChanged += this.OnAimingChanged;
     return (attack);
   }
@@ -117,13 +124,29 @@ public class PlayerController : MonoBehaviour, IDamagable
   void UpdateMovement()
   {
     var input = this.movement.GetInput();
+    if (this.attack.IsAiming.Value) {
+      this.movement.AvatarLookDirection(new Vector3(
+            this.Aim.forward.x,
+            0,
+            this.Aim.forward.z
+            ));   
+    }
     if (input.aimingInput != Vector2.zero) {
       var aimRotationAngles = this.movement.CalcAimRotationAngles(input.aimingInput);
+      if (this.IsAiming.Value) {
+        aimRotationAngles *= 0.5f;
+      }
       this.movement.RotateAim(aimRotationAngles);
     }
-    if (input.movingInput != Vector2.zero) {
       var movingDirection = this.movement.CalcMovingDirection(input.movingInput);
-      if (!this.attack.IsAiming.Value) {
+    if (input.movingInput != Vector2.zero) {
+      if (this.attack.IsAiming.Value) {
+        this.movement.Move(
+            direction: movingDirection,
+            speed: this.stat.MovingSpeedWhenAiming
+            );
+      }
+      else {
         if (this.movement.IsOppositeDirection(movingDirection)) {
           this.movement.Slowdown();
         }
@@ -132,26 +155,18 @@ public class PlayerController : MonoBehaviour, IDamagable
             acceleration: this.stat.Acceleration,
             maxSpeed: this.stat.MaxSpeed);
       }
-      else {
-        this.movement.Move(
-            direction: movingDirection,
-            speed: this.stat.MovingSpeedWhenAiming
-            );
-      }
     }
     else {
       this.movement.Slowdown();
     }
-    if (this.attack.IsAiming.Value) {
-      this.movement.AvatarLookDirection(new Vector3(
-            this.aimContainer.forward.x,
-            0,
-            this.aimContainer.forward.z
-            ));   
+    if (this.IsAiming.Value) {
+      this.movement.OnUpdate(isMoving: input.movingInput != Vector2.zero, velocity: movingDirection);
     }
-    this.movement.OnUpdate();
+    else {
+      this.movement.OnUpdate();
+    }
     if (this.movement.IsMoving.Value && !this.attack.IsAiming.Value) {
-      this.movement.AvatarLookDirection(new Vector3(
+      this.movement.AvatarLookDirectionLerp(new Vector3(
             this.movement.Velocity.x,
             0, 
             this.movement.Velocity.z
@@ -171,6 +186,11 @@ public class PlayerController : MonoBehaviour, IDamagable
       this.Die();
     }
     return (takenDamage);
+  }
+
+  public int TakeDamage(int attackDamage, Transform attacker) 
+  {
+    return (this.TakeDamage(attackDamage));
   }
 
   void Die()

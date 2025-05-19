@@ -22,7 +22,8 @@ public class GauageImageUI : MonoBehaviour
     }
   }
   public ObservableValue<(int, int)> WatchingIntValue
-  { get => this.watchingIntValue;
+  { 
+    get => this.watchingIntValue;
     set {
       if (this.watchingIntValue != null) {
         this.watchingIntValue.OnChanged -= this.OnValueChanged; 
@@ -36,9 +37,11 @@ public class GauageImageUI : MonoBehaviour
 
   ObservableValue<(float, float)> watchingFloatValue;
   ObservableValue<(int, int)> watchingIntValue;
+  bool isAnimating;
 
-  float destFloatValue;
-  int destIntValue;
+  float destValue;
+  const float ANIMATE_LERP_STEP = 10f;
+  const float ANIMATE_LERP_THRESHOLD = 0.01f;
 
   // Start is called before the first frame update
   void OnEnable()
@@ -64,17 +67,32 @@ public class GauageImageUI : MonoBehaviour
   // Update is called once per frame
   void Update()
   {
-
+    if (this.isAnimating) {
+      if (Math.Abs(this.gauageImage.fillAmount - this.destValue)
+          < ANIMATE_LERP_THRESHOLD) {
+        this.gauageImage.fillAmount = this.destValue;
+        this.isAnimating = false;
+      }
+      else {
+        this.gauageImage.fillAmount = Mathf.Lerp(
+            this.gauageImage.fillAmount,
+            this.destValue,
+            ANIMATE_LERP_STEP * Time.deltaTime
+            );
+      }
+    }
   }
 
   void OnValueChanged((float current, float max) value)
   {
-    this.gauageImage.fillAmount = Math.Clamp(
+    this.destValue = Math.Clamp(
         value.current / value.max, 0, 1);
+    this.isAnimating = true;
   }
   void OnValueChanged((int current, int max) value) 
   {
-    this.gauageImage.fillAmount = Math.Clamp(
+    this.destValue = Math.Clamp(
         (float)value.current / (float)value.max, 0, 1);
+    this.isAnimating = true;
   }
 }

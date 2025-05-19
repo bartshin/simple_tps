@@ -22,33 +22,46 @@ public class Crosshair : MonoBehaviour
 
   void Awake()
   {
-    this.player = GameObject.FindWithTag("Player").GetComponent<PlayerController>();
-    this.player.IsAiming.OnDestory += () => this.player = null;
     this.icon = this.GetComponentInChildren<Image>();
     this.iconMaterial = this.icon.material;
     this.iconMaterial.SetVector("_Color", this.defaultColor);
   }
 
+  void Start()
+  {
+    if (this.player == null) {
+      this.player = GameObject.FindWithTag("Player").GetComponent<PlayerController>();
+      this.player.IsAiming.OnDestory += () => this.player = null;
+      this.AddEventListeners();
+    }
+  }
+
   void OnEnable()
   {
     if (this.player != null) {
-      this.player.IsAiming.OnChanged += this.OnChangedAiming;
-      this.player.OnShooting += this.OnShooting;
-      this.player.IsMovinig.OnChanged += this.OnChangedMoving;
+      this.AddEventListeners();
     }
   }
 
   void OnDisable()
   {
     if (this.player != null) {
-      this.player.IsAiming.OnChanged -= this.OnChangedAiming;
-      this.player.OnShooting -= this.OnShooting;
-      this.player.IsMovinig.OnChanged -= this.OnChangedMoving;
+      this.RemoveEventListeners();
     }
   }
 
-  void Start()
+  void AddEventListeners()
   {
+    this.player.IsAiming.OnChanged += this.OnChangedAiming;
+    this.player.OnShooting += this.OnShooting;
+    this.player.IsMovinig.OnChanged += this.OnChangedMoving;
+  }
+
+  void RemoveEventListeners()
+  {
+    this.player.IsAiming.OnChanged -= this.OnChangedAiming;
+    this.player.OnShooting -= this.OnShooting;
+    this.player.IsMovinig.OnChanged -= this.OnChangedMoving;
   }
 
   // Update is called once per frame

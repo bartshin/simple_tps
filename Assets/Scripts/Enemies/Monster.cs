@@ -2,25 +2,45 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
+using Architecture;
 
-public class Monster : MonoBehaviour
+public abstract class Monster : MonoBehaviour, IDamagable
 {
-  NavMeshAgent navMeshAgent;
+  abstract public int MAX_HP { get; }
+  public ObservableValue<(int current, int max)> Hp { get; protected set; }
+  public Action OnDied;
+  [SerializeField]
+  GauageImageUI hpBar;
 
-  void Awake()
+  virtual public int TakeDamage(int attackDamage)
   {
-    this.navMeshAgent = this.GetComponent<NavMeshAgent>();
+    var hp = this.Hp.Value;
+    var takenDamage = Math.Min(attackDamage, hp.current);
+    this.Hp.Value = (hp.current - takenDamage, hp.max);
+    if (this.Hp.Value.current <= 0 &&
+        hp.current > 0) {
+      this.Die();
+    }
+    return (takenDamage);
   }
 
-  // Start is called before the first frame update
-  void Start()
+  virtual public int TakeDamage(int attackDamage, Transform attacker)
   {
-
+    return (this.TakeDamage(attackDamage));
   }
 
-  // Update is called once per frame
-  void Update()
+  virtual protected void Die()
   {
+    if (this.OnDied != null) {
+      this.OnDied.Invoke();
+    }
+  }
 
+  virtual protected void Awake()
+  {
+    this.Hp = new ((MAX_HP, MAX_HP));
+    if (this.hpBar != null) {
+      this.hpBar.WatchingIntValue = this.Hp;
+    }
   }
 }

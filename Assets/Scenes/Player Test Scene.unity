@@ -346,11 +346,6 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: fc5a676d2c90b3d4f8a22e369c35950d, type: 3}
---- !u!4 &1762500860 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 308179778319582930, guid: 5abdd27c98235a9e4a87aca1b41c2285, type: 3}
-  m_PrefabInstance: {fileID: 8423872577045124491}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &2484857945654449515
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -463,7 +458,7 @@ PrefabInstance:
     - target: {fileID: 3772018110044250923, guid: 688298a01b35a88c69ad9a88e54735be, type: 3}
       propertyPath: m_Follow
       value: 
-      objectReference: {fileID: 1762500860}
+      objectReference: {fileID: 374141677}
     - target: {fileID: 3772018110044250923, guid: 688298a01b35a88c69ad9a88e54735be, type: 3}
       propertyPath: m_LookAt
       value: 
@@ -629,14 +624,6 @@ PrefabInstance:
     - target: {fileID: 4103875576584401683, guid: 5abdd27c98235a9e4a87aca1b41c2285, type: 3}
       propertyPath: m_Name
       value: Player
-      objectReference: {fileID: 0}
-    - target: {fileID: 8922343124111776376, guid: 5abdd27c98235a9e4a87aca1b41c2285, type: 3}
-      propertyPath: m_AnchoredPosition.y
-      value: 0.511
-      objectReference: {fileID: 0}
-    - target: {fileID: 8942214250748684364, guid: 5abdd27c98235a9e4a87aca1b41c2285, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 1.883
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

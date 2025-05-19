@@ -10,15 +10,18 @@ public class Gun
 
   public float ShootingDelay { get; private set; } = 0.5f;
   float remaingDelay = 0;
+  public int Damage { get; private set; } 
+  public float Range { get; private set; }
 
-  public Gun()
+  public Gun(int damage = 20, float range = 50f)
   {
     this.FireSound = Resources.Load<AudioClip>("ShootSFX");
+    this.Damage = damage;
+    this.Range = range;
   }
 
   public void Fire()
   {
-    
     this.remaingDelay = this.ShootingDelay;
     if (this.OnFire != null) {
       this.OnFire.Invoke();

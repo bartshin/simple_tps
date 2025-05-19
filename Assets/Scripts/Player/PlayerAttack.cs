@@ -25,9 +25,14 @@ public class PlayerAttack
   [SerializeField]
   KeyCode FireKey = KeyCode.Mouse0;
   CinemachineImpulseSource impulseSource;
+  int targetLayer;
+  Transform attackOrigin;
+  Transform aim;
 
   Animator animator; 
   Gun gun; 
+
+  (GameObject gameObject, IDamagable damagable) lastTarget;
 
   public struct AttackInput
   {
@@ -35,11 +40,18 @@ public class PlayerAttack
     public bool HasPressShoot; 
   }
 
-  public PlayerAttack(Animator animator, CinemachineImpulseSource impulseSource)
+  public PlayerAttack(
+      Transform attackOrigin,
+      Transform aim,
+      Animator animator,
+      CinemachineImpulseSource impulseSource)
   {
+    this.attackOrigin = attackOrigin;
+    this.aim = aim;
     this.Gun = new Gun();
     this.animator = animator;
     this.impulseSource = impulseSource;
+    this.targetLayer = 1 << (LayerMask.NameToLayer("Monster"));
   }
 
   public void Update()
@@ -47,10 +59,7 @@ public class PlayerAttack
     var input = this.GetInput();
     this.Gun.Update();
     if (input.HasPressShoot && !this.Gun.IsHot) {
-      this.Gun.Fire();
-      if (this.OnShooting != null) {
-        this.OnShooting.Invoke();
-      }
+      this.FireGun();
     }
     var isAiming = input.IsHodingAim;
     if (this.IsAiming.Value != isAiming) {
@@ -68,11 +77,54 @@ public class PlayerAttack
     });
   }
 
+  void FireGun()
+  {
+    this.Gun.Fire();
+    var target = this.FindTarget();
+    if (target != null) {
+      target.TakeDamage(this.Gun.Damage, this.attackOrigin);
+    }
+    if (this.OnShooting != null) {
+      this.OnShooting.Invoke();
+    }
+  }
+
   void OnFired()
   {
     this.PlayShootingSound();
     this.UpdateAnimator();
     this.GenerateCameraEffect();
+  }
+
+  IDamagable FindTarget()
+  {
+    Debug.DrawRay(
+        this.attackOrigin.position,
+        this.aim.forward * 10f,
+        Color.red,
+        0.5f
+        );
+    if (Physics.Raycast(
+        this.attackOrigin.position,
+        this.aim.forward,
+        out RaycastHit hitInfo,
+        this.Gun.Range,
+        this.targetLayer
+        )) {
+      if (this.lastTarget.gameObject != null &&
+          hitInfo.transform.gameObject == this.lastTarget.gameObject) {
+        return (this.lastTarget.damagable);
+      }
+      var target = IDamagable.FindIDamagableFrom(hitInfo.transform.gameObject);
+
+      if (target != null) {
+        this.lastTarget = (hitInfo.transform.gameObject, target);
+      }
+      return (target);
+    }
+    else {
+      return (null);
+    }
   }
 
   void PlayShootingSound()

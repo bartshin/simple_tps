@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using Architecture;
 
 public class PlayerMovement 
@@ -12,6 +13,9 @@ public class PlayerMovement
   public Transform aim { get; private set; }
   public ObservableValue<bool> IsMoving { get; private set; } = new (false);
   public Vector3 Velocity => this.rb.velocity;
+
+  InputAction movingInput;
+  InputAction aimInput;
 
   float rotationLerpThreshold = 5f;
   float rotationLerpSpeed = 10f;
@@ -43,20 +47,26 @@ public class PlayerMovement
         MathF.Cos(InputSettings.Shared.MinVerticalPOV),
         MathF.Cos(InputSettings.Shared.MaxVerticalPOV)
         );
+    this.movingInput = InputSystem.actions.FindAction("Move");
+    this.aimInput = InputSystem.actions.FindAction("Rotate Aim");
   }
 
   public void OnUpdate()
   {
-    var isMoving = this.rb.velocity.magnitude > this.movingThreshold;
+    this.OnUpdate(this.rb.velocity.magnitude > this.movingThreshold, this.rb.velocity);
+  }
+
+  public void OnUpdate(bool isMoving, Vector3 velocity)
+  {
     if (this.IsMoving.Value != isMoving) {
       this.animator.SetBool("IsMoving", isMoving);
     }
     this.IsMoving.Value = isMoving;
     this.animator.SetFloat("VelocityX",
-        Math.Abs(Vector3.Dot(this.avatar.right, this.rb.velocity))
+        Math.Abs(Vector3.Dot(this.avatar.right, velocity))
         );
     this.animator.SetFloat("VelocityZ",
-        Math.Abs(Vector3.Dot(this.avatar.forward, this.rb.velocity)));
+        Math.Abs(Vector3.Dot(this.avatar.forward, velocity)));
   }
 
   public void AvatarLookDirection(Vector3 dir)
@@ -84,9 +94,14 @@ public class PlayerMovement
     if (this.rb.velocity.magnitude < this.movingThreshold) {
       return (false);
     }
-    return (
-        this.rb.velocity.x * dirToMove.x < 0 ||
-            this.rb.velocity.z * dirToMove.z < 0);
+    if (this.rb.velocity.x * dirToMove.x < 0 && 
+        this.rb.velocity.z * dirToMove.z < 0) {
+      return (true);
+    }
+    return (Vector2.Dot(
+          new Vector2(this.rb.velocity.x, this.rb.velocity.z),
+          new Vector3(dirToMove.x, dirToMove.z)
+          ) < 0);
   }
 
   public Vector2 CalcAimRotationAngles(Vector2 input)
@@ -107,7 +122,7 @@ public class PlayerMovement
 
   public void RotateAim(Vector2 angles)
   {
-    var currentRotation = this.aim.rotation.eulerAngles;
+    var currentRotation = this.aim.localRotation.eulerAngles;
     if (angles.x != 0) {
       currentRotation.y += angles.x;
     }
@@ -122,7 +137,7 @@ public class PlayerMovement
         InputSettings.Shared.MaxVerticalPOV
         );
     }
-    this.aim.rotation = Quaternion.Euler(currentRotation);
+    this.aim.localRotation = Quaternion.Euler(currentRotation);
   }
 
   public Vector2 CalcAvatarRotateAngle(Vector2 input, float rotateSpeed)
@@ -153,7 +168,9 @@ public class PlayerMovement
 
   public Vector3 CalcMovingDirection(Vector2 input)
   {
-    var movingDir = this.aim.forward * input.y + this.aim.right * input.x;
+    var movingDir = this.aim.forward * input.y + 
+      this.aim.right * input.x;
+    movingDir.y = 0;
     return (movingDir.normalized);
   }
 
@@ -168,11 +185,7 @@ public class PlayerMovement
 
   public void Move(Vector3 direction, float speed) 
   {
-    this.rb.velocity = new Vector3(
-        direction.x * speed,
-        this.rb.velocity.y,
-        direction.z * speed
-        );
+    this.rb.position += direction * Time.deltaTime * speed;
   }
 
   public (Vector2 movingInput, Vector2 aimingInput) GetInput()
@@ -180,7 +193,8 @@ public class PlayerMovement
     switch (InputSettings.Shared.Control)
     {
       case InputSettings.ControlMode.KeyboardWithMouse:
-        return (this.GetKeyboardMovingInput(), this.GetMouseAimInput()); 
+        return (this.movingInput.ReadValue<Vector2>().normalized,
+            this.aimInput.ReadValue<Vector2>().normalized); 
         default: throw (new NotImplementedException());
     }
   }
@@ -202,25 +216,5 @@ public class PlayerMovement
     else {
       this.rb.velocity = Vector3.zero;
     }
-  }
-
-  Vector2 GetKeyboardMovingInput()
-  {
-    var input = new Vector2(
-        Input.GetAxisRaw("Horizontal"),
-        Input.GetAxisRaw("Vertical")
-        );
-    if (input.magnitude > 1) {
-      return (input.normalized);
-    }
-    return (input);
-  }
-
-  Vector2 GetMouseAimInput()
-  {
-    return (new Vector2(
-        Input.GetAxis("Mouse X"),
-        Input.GetAxis("Mouse Y")
-        ));
   }
 }
