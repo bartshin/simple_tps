@@ -20,6 +20,7 @@ public class PlayerController : MonoBehaviour
       this.attack.OnShooting = value;
     }
   }
+  public ObservableValue<bool> IsAlive { get; private set; }
 
   PlayerMovement movement;
   PlayerAttack attack;
@@ -46,6 +47,8 @@ public class PlayerController : MonoBehaviour
   Transform aimCameraPosition;
   [SerializeField]
   Transform aimEnd;
+  [SerializeField]
+  Transform muzzle;
 
   PlayerStat stat = new PlayerStat { 
     Acceleration = 10f, 
@@ -61,20 +64,20 @@ public class PlayerController : MonoBehaviour
     this.movement = this.CreateMovementController(input);
     this.attack = this.CreateAttackController(input);
     this.HpBarUI.WatchingIntValue = this.stat.Hp;
-  }
-
-  void Start()
-  {
     var health = this.GetComponent<PlayerHealth>();
     health.stat = this.stat; 
+    this.IsAlive = health.IsAlive;
+    health.OnDied += this.OnDied;
   }
 
   // Update is called once per frame
   void Update()
   {
-    var input = this.GetComponent<PlayerInput>();
-    this.UpdateAttack();
-    this.UpdateMovement();
+    if (this.IsAlive.Value) {
+      var input = this.GetComponent<PlayerInput>();
+      this.UpdateAttack();
+      this.UpdateMovement();
+    }
   }
 
   void OnDestory()
@@ -93,6 +96,7 @@ public class PlayerController : MonoBehaviour
     PlayerAttack attack = new PlayerAttack(
         attackOrigin: this.aimCameraPosition.transform,
         aim: this.aimEnd.transform,
+        muzzle: this.muzzle,
         animator: this.animator,
         impulseSource: this.impulseSource,
         input: input
@@ -188,5 +192,9 @@ public class PlayerController : MonoBehaviour
     else {
       this.movement.OnUpdate();
     }
+  }
+
+  void OnDied()
+  {
   }
 }

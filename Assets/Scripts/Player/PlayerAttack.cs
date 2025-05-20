@@ -28,6 +28,7 @@ public class PlayerAttack
   int targetLayer;
   Transform attackOrigin;
   Transform aim;
+  Transform muzzle;
 
   Animator animator; 
   Gun gun; 
@@ -43,6 +44,7 @@ public class PlayerAttack
   public PlayerAttack(
       Transform attackOrigin,
       Transform aim,
+      Transform muzzle,
       Animator animator,
       CinemachineImpulseSource impulseSource,
       PlayerInput input
@@ -50,6 +52,7 @@ public class PlayerAttack
   {
     this.attackOrigin = attackOrigin;
     this.aim = aim;
+    this.muzzle = muzzle;
     this.Gun = new Gun();
     this.animator = animator;
     this.impulseSource = impulseSource;
@@ -88,9 +91,10 @@ public class PlayerAttack
   void FireGun()
   {
     this.Gun.Fire();
+    this.SpawnFire();
     var (hitObject, point, normal) = this.GetHitInfo();
     if (hitObject != null) {
-      this.SpawnParticle(point, normal);
+      this.SpawnSpark(point, normal);
       var target = this.FindTargetFrom(hitObject);
       if (target != null) {
         target.TakeDamage(this.Gun.Damage, this.attackOrigin);
@@ -101,9 +105,19 @@ public class PlayerAttack
     }
   }
 
-  void SpawnParticle(Vector3 position, Vector3 normal)
+  void SpawnFire()
   {
-    var particle = this.Gun.GetParticle();
+    var particle = this.Gun.GetFire();
+    particle.transform.position = this.muzzle.position;
+    particle.transform.rotation = this.aim.rotation;
+  }
+
+  void SpawnSpark(Vector3 position, Vector3 normal)
+  {
+    var particle = this.Gun.GetSpark();
+    var dist = Vector3.Distance(this.attackOrigin.position, position);
+    var scale = MathF.Log10(dist);
+    particle.transform.localScale = new Vector3(scale, scale, scale);
     particle.transform.position = position; 
     particle.transform.LookAt(normal);
   }

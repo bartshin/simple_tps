@@ -7,7 +7,7 @@ using Cinemachine;
 public class PlayerHealth : MonoBehaviour, IDamagable
 {
   public PlayerStat stat;
-  public ObservableValue<bool> IsAlive;
+  public ObservableValue<bool> IsAlive = new (true);
   public Action OnDied;
   [SerializeField]
   AudioClip hitSound;
@@ -27,7 +27,6 @@ public class PlayerHealth : MonoBehaviour, IDamagable
       this.stat = PlayerStat.GetDummy();
     }
 #endif
-    this.IsAlive = new (this.stat.Hp.Value.current > 0);
   }
 
   // Update is called once per frame
