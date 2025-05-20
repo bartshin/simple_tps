@@ -8393,6 +8393,18 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 1095228551833907593, guid: 688298a01b35a88c69ad9a88e54735be, type: 3}
+      propertyPath: m_XDamping
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1095228551833907593, guid: 688298a01b35a88c69ad9a88e54735be, type: 3}
+      propertyPath: m_ZDamping
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1095228551833907593, guid: 688298a01b35a88c69ad9a88e54735be, type: 3}
+      propertyPath: m_CameraDistance
+      value: 0.3
+      objectReference: {fileID: 0}
     - target: {fileID: 1265489300438716808, guid: 688298a01b35a88c69ad9a88e54735be, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -8433,6 +8445,18 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 1685205041760836681, guid: 688298a01b35a88c69ad9a88e54735be, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -2.2250848
+      objectReference: {fileID: 0}
+    - target: {fileID: 1685205041760836681, guid: 688298a01b35a88c69ad9a88e54735be, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 3.7750008
+      objectReference: {fileID: 0}
+    - target: {fileID: 1685205041760836681, guid: 688298a01b35a88c69ad9a88e54735be, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0.4410364
+      objectReference: {fileID: 0}
     - target: {fileID: 1772653635924626117, guid: 688298a01b35a88c69ad9a88e54735be, type: 3}
       propertyPath: m_Name
       value: Camera Container
@@ -8453,10 +8477,6 @@ PrefabInstance:
       propertyPath: m_LookAt
       value: 
       objectReference: {fileID: 1513023869}
-    - target: {fileID: 7970258951261911847, guid: 688298a01b35a88c69ad9a88e54735be, type: 3}
-      propertyPath: CameraCollisionFilter.m_Bits
-      value: 4294967295
-      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

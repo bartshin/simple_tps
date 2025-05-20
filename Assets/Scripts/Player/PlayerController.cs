@@ -5,26 +5,6 @@ using UnityEngine.InputSystem;
 using Architecture;
 using Cinemachine;
 
-public struct PlayerStat
-{
-  public float Acceleration;
-  public float MaxSpeed; 
-  public float MovingSpeedWhenAiming;
-  public float RotationSpeed;
-  public ObservableValue<(int current, int max)> Hp { get; set; }
-
-  public static PlayerStat GetDummy()
-  {
-    return (new PlayerStat {
-      Acceleration = 10f, 
-      MaxSpeed = 20f,
-      MovingSpeedWhenAiming = 2f,
-      RotationSpeed = 30f,
-      Hp = new ObservableValue<(int, int)>((100, 100))
-    });
-  }
-}
-
 public class PlayerController : MonoBehaviour
 {
 
@@ -209,5 +189,4 @@ public class PlayerController : MonoBehaviour
       this.movement.OnUpdate();
     }
   }
-
 }

@@ -1,10 +1,23 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using Architecture;
+using Cinemachine;
 
 public class PlayerHealth : MonoBehaviour, IDamagable
 {
   public PlayerStat stat;
+  public ObservableValue<bool> IsAlive;
+  public Action OnDied;
+  [SerializeField]
+  AudioClip hitSound;
+  [SerializeField]
+  AudioClip dieSound;
+  [SerializeField]
+  CinemachineImpulseSource impulseSource;
+
+  const float HIT_SOUND_VOLUME = 0.5f;
+  const float DIE_SOUND_VOLUME = 0.8f;
 
   // Start is called before the first frame update
   void Start()
@@ -14,6 +27,7 @@ public class PlayerHealth : MonoBehaviour, IDamagable
       this.stat = PlayerStat.GetDummy();
     }
 #endif
+    this.IsAlive = new (this.stat.Hp.Value.current > 0);
   }
 
   // Update is called once per frame
@@ -30,9 +44,11 @@ public class PlayerHealth : MonoBehaviour, IDamagable
     var (currentHp, maxHp) = this.stat.Hp.Value;
     var takenDamage = Math.Min(currentHp, attackDamage);
     this.stat.Hp.Value = (currentHp - takenDamage, maxHp);
+    this.PlayHitSound();
     if (currentHp > 0 && this.stat.Hp.Value.current <= 0) {
       this.Die();
     }
+    this.impulseSource.GenerateImpulse();
     return (takenDamage);
   }
 
@@ -41,9 +57,28 @@ public class PlayerHealth : MonoBehaviour, IDamagable
     return (this.TakeDamage(attackDamage));
   }
 
-  void Die()
+  void PlayHitSound()
   {
-    Debug.Log("Player dead");
+    var sfx = AudioManager.Shared.GetSfxController();
+    sfx.transform.position = this.transform.position;
+    sfx.SetVolume(PlayerHealth.HIT_SOUND_VOLUME);
+    sfx.PlaySound(this.hitSound);
   }
 
+  void Die()
+  {
+    this.IsAlive.Value = false;
+    this.PlayDieSound();
+    if (this.OnDied != null) {
+      this.OnDied.Invoke();
+    }
+  }
+
+  void PlayDieSound()
+  {
+    var sfx = AudioManager.Shared.GetSfxController();
+    sfx.transform.position = this.transform.position;
+    sfx.SetVolume(PlayerHealth.DIE_SOUND_VOLUME);
+    sfx.PlaySound(this.dieSound);
+  }
 }

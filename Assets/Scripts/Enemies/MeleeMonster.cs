@@ -24,7 +24,7 @@ public class MeleeMonster : Monster
 
   Coroutine currentRoutine;
   YieldInstruction idleWait = new WaitForSeconds(1f);
-  Transform player;
+  PlayerHealth player;
   IDamagable target;
   float distToPlayer;
 
@@ -81,25 +81,34 @@ public class MeleeMonster : Monster
   {
     this.Status.MovingSpeed.OnChanged += this.OnChangedMovingSpeed;
     this.Status.IsMoving.OnChanged += this.OnChangedIsMoving;
+    if (this.player != null) {
+      this.player.OnDied += this.OnPlayerDied;
+    }
   }
 
   void OnDisable()
   {
     this.Status.MovingSpeed.OnChanged -= this.OnChangedMovingSpeed;
     this.Status.IsMoving.OnChanged -= this.OnChangedIsMoving;
+    this.player.OnDied -= this.OnPlayerDied;
   }
 
   // Start is called before the first frame update
   void Start()
   {
-    this.player = GameObject.FindWithTag("Player")?.transform;
-    this.target = player?.GetComponent<PlayerHealth>() as IDamagable;
+    var playerObj = GameObject.FindWithTag("Player");
+    if (playerObj != null) {
+      this.player = playerObj.GetComponent<PlayerHealth>();
+      this.target = playerObj.GetComponent<PlayerHealth>() as IDamagable;
+      this.player.OnDied += this.OnPlayerDied;
+    }
   }
 
   // Update is called once per frame
   void Update()
   {
-    if (this.currentRoutine == null && this.player != null) {
+    if (this.currentRoutine == null && this.player != null &&
+        this.player.IsAlive.Value) {
       this.navMeshAgent.isStopped = false;
       this.currentRoutine = this.StartCoroutine(
           this.ChooseRoutine(this.state));
@@ -137,12 +146,12 @@ public class MeleeMonster : Monster
   IEnumerator StartRoaming()
   {
     this.distToPlayer = Vector3.Distance(
-        this.player.position,
+        this.player.transform.position,
         this.transform.position
         );
 
     Vector3? nextDest = null;
-    while (this.distToPlayer > this.detectDistance) {
+    while (this.distToPlayer > this.detectDistance || !this.player.IsAlive.Value) {
       yield return (idleWait);
       if (!nextDest.HasValue) {
         nextDest = this.GetRandomDestination();
@@ -154,7 +163,7 @@ public class MeleeMonster : Monster
         nextDest = null;
       }
       this.distToPlayer = Vector3.Distance(
-        this.player.position,
+        this.player.transform.position,
         this.transform.position
         );
     }
@@ -188,9 +197,9 @@ public class MeleeMonster : Monster
 
   IEnumerator StartChasingPlayer()
   {
-    while (this.distToPlayer > this.attackRange) {
-      this.navMeshAgent.SetDestination(this.player.position);
-      this.distToPlayer = Vector3.Distance(this.transform.position, this.player.position);
+    while (this.distToPlayer > this.attackRange && this.player.IsAlive.Value) {
+      this.navMeshAgent.SetDestination(this.player.transform.position);
+      this.distToPlayer = Vector3.Distance(this.transform.position, this.player.transform.position);
       yield return (null); 
     }
     this.state = State.InCombat;
@@ -200,14 +209,14 @@ public class MeleeMonster : Monster
   IEnumerator BattlePlayer()
   {
     this.remainingAttackDelay = 0f;
-    while (this.distToPlayer < this.attackRange * 1.5) {
+    while (this.distToPlayer < this.attackRange * 1.5 && this.player.IsAlive.Value) {
       if (this.remainingAttackDelay < this.delayAfterAttack) {
         yield return (this.Attack());
         this.remainingAttackDelay = this.delayAfterAttack;
       }
       this.remainingAttackDelay -= Time.deltaTime;
-      this.navMeshAgent.SetDestination(this.player.position);
-      this.distToPlayer = Vector3.Distance(this.transform.position, this.player.position);
+      this.navMeshAgent.SetDestination(this.player.transform.position);
+      this.distToPlayer = Vector3.Distance(this.transform.position, this.player.transform.position);
       yield return (null);
     } 
     this.state = State.ChasingPlayer;
@@ -249,5 +258,15 @@ public class MeleeMonster : Monster
   void OnChangedMovingSpeed(float movingSpeed)
   {
     this.animator.SetFloat("MovingSpeed", movingSpeed);
+  }
+
+  void OnPlayerDied()
+  {
+    this.navMeshAgent.isStopped = true;
+    this.state = State.Roaming;
+    if (this.currentRoutine != null) {
+      this.StopCoroutine(this.currentRoutine);
+      this.currentRoutine = null;
+    }
   }
 }

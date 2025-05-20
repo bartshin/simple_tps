@@ -65,7 +65,8 @@ public class PlayerAttack
   {
     var input = this.GetInput();
     this.Gun.Update();
-    if (input.HasPressShoot && !this.Gun.IsHot) {
+    if (input.IsHodingAim &&
+        input.HasPressShoot && !this.Gun.IsHot) {
       this.FireGun();
     }
     var isAiming = input.IsHodingAim;

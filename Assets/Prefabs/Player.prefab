@@ -238,6 +238,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 113d22af73a721b64b562d0be1a71554, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  hitSound: {fileID: 8300000, guid: 121b9810697a9df6da538ae98d7e2040, type: 3}
+  dieSound: {fileID: 8300000, guid: c28443a1edb620f30bff1821fa0045d4, type: 3}
+  impulseSource: {fileID: 4094134207007837240}
 --- !u!1 &5242011336105627532
 GameObject:
   m_ObjectHideFlags: 0
