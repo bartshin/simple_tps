@@ -4,7 +4,6 @@ using UnityPool = UnityEngine.Pool;
 
 namespace Architecture
 {
-
   public abstract class ObjectPool<T> where T: class, IPooedObject
   {
     UnityPool.ObjectPool<T> pool;
@@ -49,6 +48,11 @@ namespace Architecture
 
     protected virtual void OnTakeFromPool(T obj) {}
 
-    protected virtual void OnDestoryPoolObject(T obj) {}
+    protected virtual void OnDestoryPoolObject(T obj) { }
+
+    protected void ReturnToPool(T obj) 
+    {
+      this.pool.Release(obj);
+    }
   }
 }

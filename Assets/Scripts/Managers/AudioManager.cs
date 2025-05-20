@@ -6,7 +6,7 @@ using Architecture;
 public class AudioManager : SingletonBehaviour<AudioManager>
 {
 
-  const int DEFAULT_SFX_POOL_SIZE = 10;
+  const int DEFAULT_SFX_POOL_SIZE = 30;
   [SerializeField]
   GameObject sfxControllerPrefab;
   ObjectPool<SfxController> sfxPool;

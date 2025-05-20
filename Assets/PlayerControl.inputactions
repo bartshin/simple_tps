@@ -18,27 +18,67 @@
                     "name": "Rotate Aim",
                     "type": "Value",
                     "id": "8b07f890-9b00-4352-8685-d544ad1dc08f",
-                    "expectedControlType": "",
+                    "expectedControlType": "Vector2",
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": true
+                },
+                {
+                    "name": "Aim",
+                    "type": "Button",
+                    "id": "e1c56ce9-412a-4103-b257-05e13fff61cb",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "Shoot",
+                    "type": "Button",
+                    "id": "4c6742f5-ba17-4c32-887b-a566b8eb2a5a",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
                 }
             ],
             "bindings": [
                 {
                     "name": "",
-                    "id": "e28368a4-12fc-4514-92cc-3fa56b55066a",
-                    "path": "",
+                    "id": "d06eea5d-0a0c-41d6-bf8b-b272f68234e1",
+                    "path": "<Mouse>/delta",
                     "interactions": "",
                     "processors": "",
-                    "groups": "",
-                    "action": "Move",
+                    "groups": ";PC",
+                    "action": "Rotate Aim",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "f4200b29-2645-427a-9e14-f6bc824bc206",
+                    "path": "<Gamepad>/rightStick",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": ";PC",
+                    "action": "Rotate Aim",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "e81ec6ed-83ff-4aa3-b317-93fbca1ee40c",
+                    "path": "<Linux::MACHENIKEG5Pro>/Stick",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": ";PC",
+                    "action": "Rotate Aim",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },
                 {
                     "name": "2D Vector",
-                    "id": "6cf4c4c3-0a16-4b8b-ae1d-dd9dab14658a",
+                    "id": "501cf703-52b9-4a10-83d0-64e294b88f4f",
                     "path": "2DVector",
                     "interactions": "",
                     "processors": "",
@@ -49,7 +89,7 @@
                 },
                 {
                     "name": "up",
-                    "id": "62310d20-1a7d-4a19-8261-40107e03dee4",
+                    "id": "df9d5f76-6bf0-44b2-b5d0-6004f24d414f",
                     "path": "<Keyboard>/w",
                     "interactions": "",
                     "processors": "",
@@ -60,7 +100,7 @@
                 },
                 {
                     "name": "down",
-                    "id": "6fb283af-1aef-48f4-9cf2-a168162e41b5",
+                    "id": "c4b2f335-e0a4-448c-8ffa-7135ad72f477",
                     "path": "<Keyboard>/s",
                     "interactions": "",
                     "processors": "",
@@ -71,7 +111,7 @@
                 },
                 {
                     "name": "left",
-                    "id": "4abe02de-7db8-4f2f-9ee5-e443522eaa8c",
+                    "id": "dec18d29-b379-477a-a02e-9ab27f3c73bd",
                     "path": "<Keyboard>/a",
                     "interactions": "",
                     "processors": "",
@@ -82,7 +122,7 @@
                 },
                 {
                     "name": "right",
-                    "id": "2629a0c6-c332-4d1b-9f6c-8f985470b2c0",
+                    "id": "6c3d0a37-33df-43d3-b648-a74f33463941",
                     "path": "<Keyboard>/d",
                     "interactions": "",
                     "processors": "",
@@ -93,12 +133,78 @@
                 },
                 {
                     "name": "",
-                    "id": "d06eea5d-0a0c-41d6-bf8b-b272f68234e1",
-                    "path": "<Mouse>/delta",
+                    "id": "6d307ce2-0a3e-43ad-bd3f-86a211f619d3",
+                    "path": "<Gamepad>/leftStick",
                     "interactions": "",
                     "processors": "",
-                    "groups": "",
-                    "action": "Rotate Aim",
+                    "groups": ";PC",
+                    "action": "Move",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "f69f63e8-ab40-4c7a-ab9e-6c87108e550d",
+                    "path": "<Linux::MACHENIKEG5Pro>/Mode",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": ";PC",
+                    "action": "Aim",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "765bfb95-9e81-43fc-9aa1-2fa6562bc113",
+                    "path": "<Gamepad>/leftShoulder",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": ";PC",
+                    "action": "Aim",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "a828a7f8-f0e0-4eaa-9adf-c6ef9dcbaf51",
+                    "path": "<Mouse>/rightButton",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": ";PC",
+                    "action": "Aim",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "5506d651-82f8-410d-92b2-e66591cb05f5",
+                    "path": "<Linux::MACHENIKEG5Pro>/ThumbLeft",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": ";PC",
+                    "action": "Shoot",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "f5564361-ab03-44a6-b2ae-fa4c3c0da18b",
+                    "path": "<Mouse>/leftButton",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": ";PC",
+                    "action": "Shoot",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "6f8a7051-a039-46da-86f8-facba9b6aba4",
+                    "path": "<Gamepad>/rightTrigger",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": ";PC",
+                    "action": "Shoot",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

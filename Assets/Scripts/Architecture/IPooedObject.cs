@@ -6,5 +6,4 @@ namespace Architecture
   {
     public Action<IPooedObject> OnDisabled { get; set; }
   }
-
 }

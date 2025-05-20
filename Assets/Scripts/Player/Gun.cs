@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using Architecture;
 
 public class Gun 
 {
@@ -12,12 +13,19 @@ public class Gun
   float remaingDelay = 0;
   public int Damage { get; private set; } 
   public float Range { get; private set; }
+  public ObjectPool<ShootParticle> particles { get; private set; }
 
   public Gun(int damage = 20, float range = 50f)
   {
     this.FireSound = Resources.Load<AudioClip>("ShootSFX");
     this.Damage = damage;
     this.Range = range;
+    var particlePrefab = Resources.Load<GameObject>("SparkParticle");
+    this.particles = new MonoBehaviourPool<ShootParticle>(
+      poolSize: 10,
+      maxPoolSize: 20,
+      prefab: particlePrefab
+      );
   }
 
   public void Fire()
@@ -26,6 +34,11 @@ public class Gun
     if (this.OnFire != null) {
       this.OnFire.Invoke();
     }
+  }
+
+  public ShootParticle GetParticle()
+  {
+    return (this.particles.Get());
   }
 
   public void Update()

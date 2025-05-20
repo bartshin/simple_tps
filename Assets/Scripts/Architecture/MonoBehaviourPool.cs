@@ -30,7 +30,9 @@ namespace Architecture
 
     protected override void OnReturnedToPool(T obj)
     {
-      obj.gameObject.SetActive(false);
+      if (obj.gameObject.activeSelf) {
+        obj.gameObject.SetActive(false);
+      }
     }
   }
 }

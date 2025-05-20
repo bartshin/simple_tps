@@ -1,0 +1,5 @@
+,Type,MaxHp,AttackDamage,AttackDelay,MovingSpeed
+Imp,Melee,100,10,1.5,20
+Demon,Melee,150,20,2,10
+ZombieMan,Range,120,15,2,10
+ShotgunGuy,Range,150,20,2.5,15

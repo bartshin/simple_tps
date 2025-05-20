@@ -30,7 +30,8 @@ public class PlayerMovement
       Rigidbody rigidbody,
       Animator animator,
       Transform avatar,
-      Transform aim
+      Transform aim,
+      PlayerInput input
       )
   {
     this.rb = rigidbody;
@@ -47,13 +48,22 @@ public class PlayerMovement
         MathF.Cos(InputSettings.Shared.MinVerticalPOV),
         MathF.Cos(InputSettings.Shared.MaxVerticalPOV)
         );
-    this.movingInput = InputSystem.actions.FindAction("Move");
-    this.aimInput = InputSystem.actions.FindAction("Rotate Aim");
+    this.movingInput = input.actions["Move"];
+    this.aimInput = input.actions["Rotate Aim"];
+    this.movingInput.Enable();
+    this.aimInput.Enable();
   }
 
   public void OnUpdate()
   {
     this.OnUpdate(this.rb.velocity.magnitude > this.movingThreshold, this.rb.velocity);
+    if (IsMoving.Value) {
+      this.AvatarLookDirectionLerp(new Vector3(
+        this.Velocity.x,
+        0, 
+        this.Velocity.z
+        ));
+    }
   }
 
   public void OnUpdate(bool isMoving, Vector3 velocity)
@@ -171,7 +181,7 @@ public class PlayerMovement
     var movingDir = this.aim.forward * input.y + 
       this.aim.right * input.x;
     movingDir.y = 0;
-    return (movingDir.normalized);
+    return (movingDir);
   }
 
   public void AddVelocity(Vector3 direction, float acceleration, float maxSpeed)
@@ -185,7 +195,10 @@ public class PlayerMovement
 
   public void Move(Vector3 direction, float speed) 
   {
-    this.rb.position += direction * Time.deltaTime * speed;
+    this.rb.Move(
+        this.rb.position + direction * Time.deltaTime * speed,
+        this.rb.rotation
+        );
   }
 
   public (Vector2 movingInput, Vector2 aimingInput) GetInput()
@@ -193,8 +206,9 @@ public class PlayerMovement
     switch (InputSettings.Shared.Control)
     {
       case InputSettings.ControlMode.KeyboardWithMouse:
-        return (this.movingInput.ReadValue<Vector2>().normalized,
-            this.aimInput.ReadValue<Vector2>().normalized); 
+        var movingInput = this.movingInput.ReadValue<Vector2>();
+        var aimInput = this.aimInput.ReadValue<Vector2>();
+        return (movingInput.magnitude > 1 ? movingInput.normalized: movingInput, aimInput.magnitude > 1 ? aimInput.normalized: aimInput); 
         default: throw (new NotImplementedException());
     }
   }

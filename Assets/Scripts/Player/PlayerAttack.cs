@@ -1,10 +1,12 @@
 using System;
-using UnityEngine;
 using Architecture;
 using Cinemachine;
+using UnityEngine;
+using UnityEngine.InputSystem;
 
 public class PlayerAttack 
 {
+  const float FIRE_SOUND_VOLUME = 0.65f;
   public Gun Gun { 
     get => this.gun; 
     private set {
@@ -20,10 +22,8 @@ public class PlayerAttack
 
   public ObservableValue<bool> IsAiming { get; private set; } = new (false);
   public Action OnShooting;
-  [SerializeField] 
-  KeyCode AimKey = KeyCode.Mouse1;
-  [SerializeField]
-  KeyCode FireKey = KeyCode.Mouse0;
+  InputAction aimInput;
+  InputAction shootInput;
   CinemachineImpulseSource impulseSource;
   int targetLayer;
   Transform attackOrigin;
@@ -44,14 +44,21 @@ public class PlayerAttack
       Transform attackOrigin,
       Transform aim,
       Animator animator,
-      CinemachineImpulseSource impulseSource)
+      CinemachineImpulseSource impulseSource,
+      PlayerInput input
+      )
   {
     this.attackOrigin = attackOrigin;
     this.aim = aim;
     this.Gun = new Gun();
     this.animator = animator;
     this.impulseSource = impulseSource;
-    this.targetLayer = 1 << (LayerMask.NameToLayer("Monster"));
+    this.targetLayer = ~(( 1 << LayerMask.NameToLayer("Player")) 
+        | (1 << LayerMask.NameToLayer("UI")));
+    this.aimInput = input.actions["Aim"];
+    this.shootInput = input.actions["Shoot"];
+    this.aimInput.Enable();
+    this.shootInput.Enable();
   }
 
   public void Update()
@@ -72,21 +79,32 @@ public class PlayerAttack
   {
     return (
       new AttackInput {
-      IsHodingAim = Input.GetKey(this.AimKey),
-      HasPressShoot = Input.GetKey(this.FireKey)
+      IsHodingAim = this.aimInput.IsPressed(),
+      HasPressShoot = this.shootInput.IsPressed() 
     });
   }
 
   void FireGun()
   {
     this.Gun.Fire();
-    var target = this.FindTarget();
-    if (target != null) {
-      target.TakeDamage(this.Gun.Damage, this.attackOrigin);
+    var (hitObject, point, normal) = this.GetHitInfo();
+    if (hitObject != null) {
+      this.SpawnParticle(point, normal);
+      var target = this.FindTargetFrom(hitObject);
+      if (target != null) {
+        target.TakeDamage(this.Gun.Damage, this.attackOrigin);
+      }
     }
     if (this.OnShooting != null) {
       this.OnShooting.Invoke();
     }
+  }
+
+  void SpawnParticle(Vector3 position, Vector3 normal)
+  {
+    var particle = this.Gun.GetParticle();
+    particle.transform.position = position; 
+    particle.transform.LookAt(normal);
   }
 
   void OnFired()
@@ -96,40 +114,46 @@ public class PlayerAttack
     this.GenerateCameraEffect();
   }
 
-  IDamagable FindTarget()
+  (GameObject hitObject, Vector3 point, Vector3 normal) GetHitInfo()
   {
+    var dir = (this.aim.position - this.attackOrigin.position).normalized;
+#if UNITY_EDITOR
     Debug.DrawRay(
         this.attackOrigin.position,
-        this.aim.forward * 10f,
+        dir * this.Gun.Range,
         Color.red,
         0.5f
         );
+#endif
     if (Physics.Raycast(
         this.attackOrigin.position,
-        this.aim.forward,
+        dir,
         out RaycastHit hitInfo,
         this.Gun.Range,
         this.targetLayer
         )) {
-      if (this.lastTarget.gameObject != null &&
-          hitInfo.transform.gameObject == this.lastTarget.gameObject) {
-        return (this.lastTarget.damagable);
-      }
-      var target = IDamagable.FindIDamagableFrom(hitInfo.transform.gameObject);
+      return (hitInfo.collider.gameObject, hitInfo.point, hitInfo.normal);
+    }
+    return (null, Vector3.zero, Vector3.zero);
+  }
 
-      if (target != null) {
-        this.lastTarget = (hitInfo.transform.gameObject, target);
-      }
-      return (target);
+  IDamagable FindTargetFrom(GameObject gameObject)
+  {
+    if (this.lastTarget.gameObject != null &&
+        gameObject == this.lastTarget.gameObject) {
+      return (this.lastTarget.damagable);
     }
-    else {
-      return (null);
+    var target = IDamagable.FindIDamagableFrom(gameObject);
+    if (target != null) {
+      this.lastTarget = (gameObject, target);
     }
+    return (target);
   }
 
   void PlayShootingSound()
   {
     var sfx = AudioManager.Shared.GetSfxController();
+    sfx.SetVolume(PlayerAttack.FIRE_SOUND_VOLUME);
     sfx.PlaySound(this.Gun.FireSound);
   }
 

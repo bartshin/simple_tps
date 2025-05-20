@@ -5,19 +5,31 @@ using UnityEngine.InputSystem;
 using Architecture;
 using Cinemachine;
 
-public class PlayerController : MonoBehaviour, IDamagable
+public struct PlayerStat
 {
-  public struct PlayerStat
+  public float Acceleration;
+  public float MaxSpeed; 
+  public float MovingSpeedWhenAiming;
+  public float RotationSpeed;
+  public ObservableValue<(int current, int max)> Hp { get; set; }
+
+  public static PlayerStat GetDummy()
   {
-    public float Acceleration;
-    public float MaxSpeed; 
-    public float MovingSpeedWhenAiming;
-    public float RotationSpeed;
-    public ObservableValue<(int current, int max)> Hp { get; set; }
+    return (new PlayerStat {
+      Acceleration = 10f, 
+      MaxSpeed = 20f,
+      MovingSpeedWhenAiming = 2f,
+      RotationSpeed = 30f,
+      Hp = new ObservableValue<(int, int)>((100, 100))
+    });
   }
+}
+
+public class PlayerController : MonoBehaviour
+{
 
   public Vector3 Position => this.Avatar.transform.position;
-  public Quaternion AimDirection => this.Aim.rotation;
+  public Quaternion AimDirection => this.AimContainer.rotation;
   public ObservableValue<bool> IsAiming => this.attack.IsAiming;
   public ObservableValue<bool> IsMovinig => this.movement.IsMoving;
   public ObservableValue<(int current, int max)> Hp => this.stat.Hp;
@@ -31,10 +43,8 @@ public class PlayerController : MonoBehaviour, IDamagable
 
   PlayerMovement movement;
   PlayerAttack attack;
-  [SerializeField]
-  public Transform Aim => this.aimContainer;
-  [SerializeField]
-  Transform aimContainer;
+  public Transform AimContainer => this.aimContainer;
+
   [SerializeField]
   Animator animator;
   [SerializeField]
@@ -49,6 +59,14 @@ public class PlayerController : MonoBehaviour, IDamagable
   [SerializeField]
   GauageImageUI HpBarUI;
 
+  [Header("Aim")]
+  [SerializeField]
+  Transform aimContainer;
+  [SerializeField]
+  Transform aimCameraPosition;
+  [SerializeField]
+  Transform aimEnd;
+
   PlayerStat stat = new PlayerStat { 
     Acceleration = 10f, 
     MaxSpeed = 20f,
@@ -59,21 +77,25 @@ public class PlayerController : MonoBehaviour, IDamagable
 
   void Awake()
   {
-    this.movement = this.CreateMovementController();
-    this.attack = this.CreateAttackController();
+    var input = this.GetComponent<PlayerInput>();
+    this.movement = this.CreateMovementController(input);
+    this.attack = this.CreateAttackController(input);
     this.HpBarUI.WatchingIntValue = this.stat.Hp;
+  }
+
+  void Start()
+  {
+    var health = this.GetComponent<PlayerHealth>();
+    health.stat = this.stat; 
   }
 
   // Update is called once per frame
   void Update()
   {
+    var input = this.GetComponent<PlayerInput>();
     this.UpdateAttack();
     this.UpdateMovement();
-    if (Input.GetKeyDown(KeyCode.Alpha1)) {
-      this.TakeDamage(10);
-    }
   }
-
 
   void OnDestory()
   {
@@ -86,18 +108,20 @@ public class PlayerController : MonoBehaviour, IDamagable
     this.attack.Update();
   }
 
-  PlayerAttack CreateAttackController()
+  PlayerAttack CreateAttackController(PlayerInput input)
   {
     PlayerAttack attack = new PlayerAttack(
-        attackOrigin: this.aimContainer.transform,
-        aim: this.Aim.transform,
+        attackOrigin: this.aimCameraPosition.transform,
+        aim: this.aimEnd.transform,
         animator: this.animator,
-        impulseSource: this.impulseSource);
+        impulseSource: this.impulseSource,
+        input: input
+        );
     attack.IsAiming.OnChanged += this.OnAimingChanged;
     return (attack);
   }
 
-  PlayerMovement CreateMovementController()
+  PlayerMovement CreateMovementController(PlayerInput input)
   {
     if (this.aimContainer == null) { 
       this.aimContainer = this.transform.Find("Aim Container");
@@ -110,7 +134,8 @@ public class PlayerController : MonoBehaviour, IDamagable
           rigidbody: this.rb,
           animator: this.animator,
           avatar: this.Avatar,
-          aim: this.Aim
+          aim: this.AimContainer,
+          input: input
           ));
   }
 
@@ -124,22 +149,33 @@ public class PlayerController : MonoBehaviour, IDamagable
   void UpdateMovement()
   {
     var input = this.movement.GetInput();
+    this.UpdateAim(input.aimingInput);
+    this.UpdatePosition(input.movingInput);
+    this.OnMovementUpdated(input.movingInput);
+  }
+
+  void UpdateAim(Vector2 aimingInput)
+  {
     if (this.attack.IsAiming.Value) {
       this.movement.AvatarLookDirection(new Vector3(
-            this.Aim.forward.x,
+            this.AimContainer.forward.x,
             0,
-            this.Aim.forward.z
+            this.AimContainer.forward.z
             ));   
     }
-    if (input.aimingInput != Vector2.zero) {
-      var aimRotationAngles = this.movement.CalcAimRotationAngles(input.aimingInput);
+    if (aimingInput != Vector2.zero) {
+      var aimRotationAngles = this.movement.CalcAimRotationAngles(aimingInput);
       if (this.IsAiming.Value) {
-        aimRotationAngles *= 0.5f;
+        aimRotationAngles *= 0.3f;
       }
       this.movement.RotateAim(aimRotationAngles);
     }
-      var movingDirection = this.movement.CalcMovingDirection(input.movingInput);
-    if (input.movingInput != Vector2.zero) {
+  }
+
+  void UpdatePosition(Vector2 movingInput)
+  {
+    var movingDirection = this.movement.CalcMovingDirection(movingInput);
+    if (movingInput != Vector2.zero) {
       if (this.attack.IsAiming.Value) {
         this.movement.Move(
             direction: movingDirection,
@@ -156,45 +192,22 @@ public class PlayerController : MonoBehaviour, IDamagable
             maxSpeed: this.stat.MaxSpeed);
       }
     }
-    else {
+    if (movingInput == Vector2.zero){
       this.movement.Slowdown();
     }
+  }
+
+  void OnMovementUpdated(Vector2 movingInput)
+  {
+    var movingDirection = this.movement.CalcMovingDirection(movingInput);
     if (this.IsAiming.Value) {
-      this.movement.OnUpdate(isMoving: input.movingInput != Vector2.zero, velocity: movingDirection);
+      this.movement.OnUpdate(
+          isMoving: movingInput != Vector2.zero,
+          velocity: movingDirection);
     }
     else {
       this.movement.OnUpdate();
     }
-    if (this.movement.IsMoving.Value && !this.attack.IsAiming.Value) {
-      this.movement.AvatarLookDirectionLerp(new Vector3(
-            this.movement.Velocity.x,
-            0, 
-            this.movement.Velocity.z
-            ));
-    }
   }
 
-  public int TakeDamage(int attackDamage)
-  {
-    if (attackDamage < 0) {
-      throw (new ArgumentException($"{nameof(attackDamage)} cannot be lesss than zero"));
-    }
-    var (currentHp, maxHp) = this.stat.Hp.Value;
-    var takenDamage = Math.Min(currentHp, attackDamage);
-    this.stat.Hp.Value = (currentHp - takenDamage, maxHp);
-    if (currentHp > 0 && this.stat.Hp.Value.current <= 0) {
-      this.Die();
-    }
-    return (takenDamage);
-  }
-
-  public int TakeDamage(int attackDamage, Transform attacker) 
-  {
-    return (this.TakeDamage(attackDamage));
-  }
-
-  void Die()
-  {
-    Debug.Log("Player dead");
-  }
 }

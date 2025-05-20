@@ -39,7 +39,7 @@ public class GauageImageUI : MonoBehaviour
   ObservableValue<(int, int)> watchingIntValue;
   bool isAnimating;
 
-  float destValue;
+  float destValue = 1f;
   const float ANIMATE_LERP_STEP = 10f;
   const float ANIMATE_LERP_THRESHOLD = 0.01f;
 
@@ -83,16 +83,19 @@ public class GauageImageUI : MonoBehaviour
     }
   }
 
-  void OnValueChanged((float current, float max) value)
-  {
-    this.destValue = Math.Clamp(
-        value.current / value.max, 0, 1);
-    this.isAnimating = true;
-  }
   void OnValueChanged((int current, int max) value) 
   {
+    this.OnValueChanged(((float) value.current, (float) value.max));
+  }
+
+  void OnValueChanged((float current, float max) value)
+  {
+    if (this.gauageImage.fillAmount != this.destValue || 
+        value.current <= 0f) {
+      this.gauageImage.fillAmount = this.destValue;
+    }
     this.destValue = Math.Clamp(
-        (float)value.current / (float)value.max, 0, 1);
+        value.current / value.max, 0, 1);
     this.isAnimating = true;
   }
 }
